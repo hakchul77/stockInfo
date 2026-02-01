@@ -59,24 +59,37 @@ async def status(ctx, stock_name: str = None):
         title = f"현재 트레이딩 상태 ({stock_name})" if stock_name else "현재 트레이딩 상태 (전체)"
         embed = discord.Embed(title=title, color=0x3498db)
         
+        # 상태값 한글 매핑
+        status_map = {
+            "HOLDING": "보유중",
+            "READY": "대기중",
+            "SELL_ORDERED": "매도중",
+            "BUY_ORDERED": "매수중"
+        }
+
         for item in data:
             master = item.get('trade_master', {})
             s_name = master.get('stock_name', 'Unknown')
             strategy_name = master.get('strategy_name', 'Unknown')
             
             idx = item.get('tranche_index')
-            status_val = item.get('status')
+            status_raw = item.get('status')
+            
+            # 매핑된 한글 상태값 사용 (없으면 원본 영어 값 사용)
+            status_val = status_map.get(status_raw, status_raw)
+            
             buy_price = item.get('target_buy_price', 0)
             sell_price = item.get('target_sell_price', 0)
             qty = item.get('quantity', 0)
 
             # 보기 좋게 포맷팅
-            field_name = f"[{strategy_name}] {s_name} (#{idx})"
+            # 종목명 (Tranche #01) 형식
+            field_name = f"{s_name} (Tranche #{int(idx):02d})"
             field_value = (
-                f"Status: {status_val}\n"
-                f"Target Buy: {buy_price:,}\n"
-                f"Target Sell: {sell_price:,}\n"
-                f"Qty: {qty:,}"
+                f"상태: {status_val}\n"
+                f"목표매수가: {buy_price:,}\n"
+                f"목표매도가: {sell_price:,}\n"
+                f"주문수량: {qty:,}"
             )
             embed.add_field(name=field_name, value=field_value, inline=False)
 
